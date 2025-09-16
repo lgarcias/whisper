@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest
+pytest-asyncio
+httpx   # útil para tests con FastAPI TestClient
