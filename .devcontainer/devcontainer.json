@@ -1,0 +1,24 @@
+{
+  "name": "whisper-website-dev",
+  "dockerComposeFile": ["docker-compose.yml"],
+  "service": "app",
+  "workspaceFolder": "/workspaces/whisper-website",
+  "runServices": ["app", "redis"],
+  "shutdownAction": "stopCompose",
+  "forwardPorts": [3000, 8000, 6379],
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-azuretools.vscode-docker",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "python.defaultInterpreterPath": "/workspaces/whisper-website/.venv/bin/python",
+        "editor.formatOnSave": true
+      }
+    }
+  }
+}

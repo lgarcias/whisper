@@ -1,0 +1,10 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+redis
+rq
+faster-whisper
+ctranslate2
+openai-whisper
