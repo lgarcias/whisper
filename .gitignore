@@ -13,6 +13,7 @@ data/
 example.wav
 logs/
 *.log
+build/
 
 # Node
 node_modules/
