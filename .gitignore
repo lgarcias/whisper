@@ -1,0 +1,23 @@
+# VS Code
+.vscode/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.env
+venv/
+
+# Local data and artifacts
+data/
+example.wav
+logs/
+*.log
+
+# Node
+node_modules/
+.next/
+
+# OS
+.DS_Store
+Thumbs.db
