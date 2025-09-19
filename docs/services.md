@@ -1,55 +1,213 @@
-# Services, Queues & Caching
+# Services Guide (FastAPI, Redis, RQ Worker)
 
-This repo ships with a Dev Container that starts two services via Docker Compose:
+This document explains what each service does and how to **start / stop / restart** them from the **host** and from the **DevContainer terminal in VS Code**.
 
-- **app** — your development environment (Python, Node.js) where you run the FastAPI app and RQ worker.
-- **redis** — Redis 7 used by RQ.
+> Compose file used below: `.devcontainer/docker-compose.yml`
 
-```yaml
-# .devcontainer/docker-compose.yml (excerpt)
-services:
-  app:
-    build: .devcontainer/Dockerfile
-    volumes:
-      - ..:/workspaces/whisper-website:cached
-      - whisper-models:/models
-    ports: ["3000:3000", "8000:8000"]
-    environment:
-      WHISPER_CACHE_DIR=/models/whisper
-      HF_HOME=/models/hf
-      XDG_CACHE_HOME=/models/cache
-  redis:
-    image: redis:7-alpine
+---
 
-volumes:
-  whisper-models: {}
-```
+## Services Overview
 
-## Model caches
+- **FastAPI (app)**
 
-Model downloads are persisted to the named volume `whisper-models`, mounted at `/models` inside the dev container. This avoids re-downloading models after rebuilds:
+  - Python API served by `uvicorn`.
+  - Default ports exposed in compose: `8000:8000` (API), optionally `3000:3000` if your frontend uses it.
+  - Health endpoint: `GET /health` → `{ "status": "ok" }`.
 
-- `WHISPER_CACHE_DIR=/models/whisper`
-- `HF_HOME=/models/hf`
-- `XDG_CACHE_HOME=/models/cache`
+- **Redis (redis)**
 
-## Ports
+  - In‑memory queue broker for RQ.
+  - Internal port: `6379` (usually not published to host).
 
-- `8000` — FastAPI (Uvicorn)  
-- `3000` — reserved for a future web frontend  
-- `6379` — Redis (forwarded internally by the devcontainer)
+- **RQ Worker (worker)**
 
-## Queue
+  - Background worker that consumes jobs from the Redis queue `whisper`.
+  - Runs `python -m backend.app.worker`.
 
-- Queue name: **`whisper`**  
-- Connection: created in `backend/app/rq_queue.py` using `REDIS_URL` from env (default `redis://redis:6379/0`).
+---
 
-Start a worker with:
+## From the Host (outside the container)
+
+> Run these in the project root on your host (Windows PowerShell / Git Bash), adjusting the path if needed.
+
+### Start
 
 ```bash
-python -m rq worker whisper
+# Start everything
+docker compose -f .devcontainer/docker-compose.yml up -d
+
+# Start a specific service
+docker compose -f .devcontainer/docker-compose.yml up -d app
+docker compose -f .devcontainer/docker-compose.yml up -d redis
+docker compose -f .devcontainer/docker-compose.yml up -d worker
 ```
 
-## Storage
+### Stop
 
-Transcripts are written under `TRANSCRIPTS_DIR` (default `/workspaces/whisper-website/data`). Mount or bind this path in production so results persist across restarts.
+```bash
+# Stop everything (keeps containers)
+docker compose -f .devcontainer/docker-compose.yml stop
+
+# Stop specific service
+docker compose -f .devcontainer/docker-compose.yml stop app
+```
+
+### Restart
+
+```bash
+# Restart everything
+docker compose -f .devcontainer/docker-compose.yml restart
+
+# Restart specific services
+docker compose -f .devcontainer/docker-compose.yml restart app
+Docker compose -f .devcontainer/docker-compose.yml restart worker
+```
+
+### Status & Logs
+
+```bash
+# Status of all services
+docker compose -f .devcontainer/docker-compose.yml ps
+
+# Follow logs
+docker compose -f .devcontainer/docker-compose.yml logs -f app
+docker compose -f .devcontainer/docker-compose.yml logs -f redis
+docker compose -f .devcontainer/docker-compose.yml logs -f worker
+```
+
+### One‑liners (common flows)
+
+```bash
+# Start worker and tail logs
+docker compose -f .devcontainer/docker-compose.yml up -d worker && docker compose -f .devcontainer/docker-compose.yml logs -f worker
+
+# Recreate app after compose edits
+docker compose -f .devcontainer/docker-compose.yml up -d --force-recreate app
+```
+
+---
+
+## From the DevContainer Terminal (inside VS Code)
+
+Open a terminal **inside** the DevContainer (it shows a path like `/workspaces/whisper-website`).
+
+### FastAPI (app)
+
+**Start (manual)**
+
+```bash
+source .venv/bin/activate
+uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload
+```
+
+**Stop**: `Ctrl+C` in that terminal.
+
+**Restart**: stop then start again, or use VS Code Tasks (below).
+
+### RQ Worker (worker)
+
+**Start (manual)**
+
+```bash
+source .venv/bin/activate
+python -m backend.app.worker
+```
+
+**Stop**: `Ctrl+C` in that terminal.
+
+> If you added the worker as a Compose service (recommended), prefer using the host commands: `up -d worker`, `logs -f worker`, etc.
+
+### Redis (redis)
+
+Managed by Docker Compose. From inside the DevContainer you can ping it:
+
+```bash
+redis-cli -h redis ping   # → PONG
+```
+
+---
+
+## VS Code Tasks (optional convenience)
+
+Create `.vscode/tasks.json` with entries like:
+
+```json
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Start FastAPI (uvicorn)",
+      "type": "shell",
+      "command": "source .venv/bin/activate && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "problemMatcher": []
+    },
+    {
+      "label": "Stop FastAPI (uvicorn)",
+      "type": "shell",
+      "command": "pkill -f 'uvicorn' || true",
+      "problemMatcher": []
+    },
+    {
+      "label": "Restart FastAPI (uvicorn)",
+      "type": "shell",
+      "command": "pkill -f 'uvicorn' || true && source .venv/bin/activate && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload",
+      "problemMatcher": []
+    },
+
+    {
+      "label": "Start RQ Worker",
+      "type": "shell",
+      "command": "source .venv/bin/activate && python -m backend.app.worker",
+      "problemMatcher": [],
+      "isBackground": false,
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    },
+    {
+      "label": "Stop RQ Worker",
+      "type": "shell",
+      "command": "pkill -f 'backend.app.worker' || true",
+      "problemMatcher": []
+    },
+    {
+      "label": "Restart RQ Worker",
+      "type": "shell",
+      "command": "pkill -f 'backend.app.worker' || true && source .venv/bin/activate && python -m backend.app.worker",
+      "problemMatcher": [],
+      "isBackground": false,
+      "presentation": { "reveal": "always", "panel": "dedicated" }
+    }
+  ]
+}
+```
+
+Run with **Ctrl+Shift+P → Run Task**.
+
+---
+
+## Health Checks & Quick Tests
+
+- **FastAPI**
+
+  - From host: `curl http://localhost:8000/health` → `{ "status": "ok" }`
+  - Upload transcription test:
+    ```bash
+    curl -X POST "http://localhost:8000/transcriptions" -F "file=@/path/to/audio.wav"
+    ```
+
+- **Redis**
+
+  - Inside DevContainer: `redis-cli -h redis ping` → `PONG`
+
+- **RQ Worker**
+
+  - Logs: `docker compose -f .devcontainer/docker-compose.yml logs -f worker`
+  - Should show: `Listening on whisper...`, `Started job ...`, `Finished ...`.
+
+---
+
+## Common Issues
+
+- **Port 3000/8000 already in use**: free the port on host or change port mapping in compose (`ports:` section).
+- **Worker stops when closing VS Code terminal**: run worker as a Compose service with `restart: unless-stopped`.
+- **Results location**: by default `TRANSCRIPTS_DIR` → `/workspaces/whisper-website/data`. If using a volume, set `TRANSCRIPTS_DIR=/data` and mount `whisper-data:/data` in `app` and `worker`.
+- **Redis connectivity**: inside Compose network, host is `redis` (not `localhost`).

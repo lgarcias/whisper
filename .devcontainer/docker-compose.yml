@@ -22,6 +22,18 @@ services:
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+  worker:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    working_dir: /workspaces/whisper-website
+    volumes:
+      - ..:/workspaces/whisper-website:cached
+      - whisper-models:/models
+    depends_on:
+      - redis
+    command: bash -lc "source .venv/bin/activate && python -m backend.app.worker"
+    restart: unless-stopped
 
 volumes:
   whisper-models: {}   # ⬅️ define el volumen
