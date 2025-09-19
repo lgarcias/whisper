@@ -1,82 +1,60 @@
 # Whisper Website
 
-A minimal, container-friendly backend for speech-to-text using OpenAI Whisper. It exposes a FastAPI service that accepts audio uploads, queues the transcription job in Redis/RQ, and writes results (plain text + JSON with segments) to a persistent folder. The repo is structured to work smoothly in a VS Code Dev Container with model caches persisted across rebuilds.
+Whisper Website is a project that provides a **FastAPI** backend and a frontend to transcribe audio using **OpenAI Whisper** and **Faster-Whisper** models.
 
-> **Status:** early MVP. The HTTP surface and worker loop are intentionally small so you can iterate quickly.
-
-## Why this project?
-
-- **Private & portable:** run on your own VPS / desktop without sending audio to third parties (when using `faster-whisper`).  
-- **Queue-first design:** uploads return a `job_id` immediately; processing happens in a background RQ worker.  
-- **DevContainer ready:** reproducible local dev with cached Whisper models to speed up rebuilds.  
-
-## Project layout
-
-```
-.
-├─ .devcontainer/           # Dev Container (Dockerfile, docker-compose, post-create)
-├─ backend/
-│  ├─ app/                  # FastAPI app + transcription utils
-│  │  ├─ main.py            # API endpoints (upload, job status/result, health)
-│  │  ├─ transcribe.py      # engine selection (openai|faster), run + serialize
-│  │  ├─ storage.py         # file helpers (tmp upload, job output directory)
-│  │  ├─ rq_queue.py        # shared Redis/RQ connection
-│  │  ├─ config.py          # settings & defaults (env-driven)
-│  │  └─ worker.py          # (WIP) long-lived RQ worker
-│  ├─ requirements.txt
-│  └─ README.md             # quick notes for running the backend
-└─ docs/                    # extended documentation (this README links here)
-```
-
-## Quick start (Dev Container)
-
-1. Open this folder in VS Code and choose **“Reopen in Container”**.  
-2. The post-create hook sets up a Python venv and installs backend deps.  
-3. Start services from the repo root:
-
-```bash
-# API (hot reload)
-uvicorn backend.app.main:app --reload --host 0.0.0.0 --port 8000
-
-# Redis is already running as a sidecar in the Dev Container
-# Start an RQ worker in another terminal:
-python -m rq worker whisper
-```
-
-> The Dev Container maps a persistent volume at `/models` to store Whisper/HuggingFace caches so you don’t re-download models after rebuilds.
-
-## API at a glance
-
-- `POST /transcribe` — upload audio, returns `{ job_id }`.  
-- `GET  /result/{job_id}` — returns 202 while processing; otherwise returns JSON string (with segments) and a path to the `.txt`.  
-- `GET  /health` — liveness/readiness check.
-
-> The exact payloads and field names are documented in **[docs/backend.md](docs/backend.md)**.
-
-## Configuration (env vars)
-
-- `ENGINE` (`faster`|`openai`) – default `faster`  
-- `MODEL`  (`tiny`|`base`|`small`|`medium`|`large`) – default `base`  
-- `DEVICE` (`auto`|`cpu`|`cuda`) – default `auto` (auto-detects CUDA when available)  
-- `COMPUTE` (`int8`|`int8_float16`|`float16`|`float32`) – faster-whisper compute type; default `int8`  
-- `REDIS_URL` – default `redis://redis:6379/0`  
-- `TRANSCRIPTS_DIR` – default `/workspaces/whisper-website/data`
-
-All of these are wired in `backend/app/config.py` and can be overridden per environment.
-
-## Next steps
-
-- Finish the dedicated `worker.py` loop to preload the model once and reuse it across jobs.  
-- Add a simple web UI (dropzone + job viewer).  
-- Add auth and rate limiting when exposing the API publicly.
-
-## Documentation index
-
-- **[docs/backend.md](docs/backend.md)** — API details, error shapes, and data formats.  
-- **[docs/services.md](docs/services.md)** — Redis/RQ, queues, and model cache volumes.  
-- **[docs/app-setup.md](docs/app-setup.md)** — Deploying on a VPS (reverse proxy, SSL, systemd).  
-- **[docs/developer-setup.md](docs/developer-setup.md)** — Local development flows and common commands.
+The goal is to offer a simple API to upload audio files and get transcriptions, with background job queue processing via **RQ + Redis**.
 
 ---
 
-If you prefer ultra-short READMEs, keep this file as the “front door” and move the rest of the details into the files under `docs/`.
+## 🚀 Local development
+
+### Prerequisites
+
+- Docker and Docker Compose
+- VS Code with the **Dev Containers** extension
+- Git
+
+### Initial setup
+
+Clone this repository and open it in VS Code:
+
+```bash
+git clone <repo-url>
+cd whisper-website
+```
+
+Open in VS Code and select `Reopen in Container` to load the development environment.
+
+### Main services
+
+- **Backend**: FastAPI running at `http://localhost:8000`
+- **Frontend**: React/Next.js running at `http://localhost:3000`
+- **Redis**: used for the job queue
+
+---
+
+## 📌 API Endpoints
+
+> Default Base URL: `http://localhost:8000`
+
+- `GET /health` → Check service status
+- `POST /transcriptions` → Upload an audio file for transcription (returns `job_id`)
+- `GET /transcriptions/{job_id}` → Check job status
+- `GET /transcriptions/{job_id}/result` → Get transcription result
+
+> Detailed documentation in [`docs/backend.md`](docs/backend.md)
+
+---
+
+## 🛠️ Technologies
+
+- [FastAPI](https://fastapi.tiangolo.com/)
+- [RQ](https://python-rq.org/) + Redis
+- [Whisper](https://github.com/openai/whisper) and [Faster-Whisper](https://github.com/guillaumekln/faster-whisper)
+- Docker / DevContainers
+
+---
+
+## 📄 License
+
+MIT
