@@ -1,18 +1,19 @@
-export async function createTranscription(file: File) {
-  const fd = new FormData();
-  fd.append("file", file);
-  const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/transcriptions`, { method: "POST", body: fd });
-  if (!r.ok) throw new Error(await r.text());
-  return r.json() as Promise<{ job_id: string; status: string }>;
+// frontend/src/app/lib/api.ts
+export type TranscriptionJob = {
+  job_id: string;
+  status: "queued" | "processing" | "finished" | "error" | string;
+};
+
+export async function createTranscription(file: File): Promise<TranscriptionJob> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/transcriptions", { method: "POST", body: form });
+  if (!res.ok) throw new Error("Failed to create transcription");
+  return res.json() as Promise<TranscriptionJob>;
 }
-export async function getStatus(id: string) {
-  const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/transcriptions/${id}`);
-  if (!r.ok) throw new Error(await r.text());
-  return r.json() as Promise<{ job_id: string; status: string }>;
-}
-export async function getResult(id: string) {
-  const r = await fetch(`${process.env.NEXT_PUBLIC_API_BASE}/transcriptions/${id}/result`);
-  if (r.status === 202) throw new Error("NotReady");
-  if (!r.ok) throw new Error(await r.text());
-  return r.json() as Promise<{ json: string; text_path: string; outdir?: string }>;
+
+export async function getStatus(id: string): Promise<TranscriptionJob> {
+  const res = await fetch(`/api/transcriptions/${id}`);
+  if (!res.ok) throw new Error("Failed to get status");
+  return res.json() as Promise<TranscriptionJob>;
 }

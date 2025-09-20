@@ -1,36 +1,35 @@
 "use client";
+
 import { useState } from "react";
-import { createTranscription } from "@/lib/api";
-import { useRouter } from "next/navigation";
+import { createTranscription, type TranscriptionJob } from "../lib/api";
 
 export default function Page() {
   const [file, setFile] = useState<File | null>(null);
-  const [busy, setBusy] = useState(false);
-  const router = useRouter();
+  const [jobId, setJobId] = useState<string | null>(null);
 
-  async function onSubmit(e: React.FormEvent) {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
-    setBusy(true);
-    try {
-      const { job_id } = await createTranscription(file);
-      router.push(`/job/${job_id}`);
-    } catch (e: any) {
-      alert(e.message ?? "Upload failed");
-    } finally {
-      setBusy(false);
-    }
-  }
+
+    // createTranscription devuelve { job_id, status }
+    const res: TranscriptionJob = await createTranscription(file);
+    setJobId(res.job_id); // ← extraemos la string correcta
+  };
 
   return (
-    <main className="max-w-xl mx-auto p-6 space-y-4">
-      <h1 className="text-2xl font-semibold">Whisper Website</h1>
-      <form onSubmit={onSubmit} className="space-y-3">
-        <input type="file" accept="audio/*" onChange={e => setFile(e.target.files?.[0] ?? null)} />
-        <button disabled={!file || busy} className="px-4 py-2 rounded bg-black text-white disabled:opacity-50">
-          {busy ? "Uploading..." : "Transcribe"}
-        </button>
+    <div>
+      <h1>Upload audio</h1>
+      <form onSubmit={handleSubmit}>
+        <input
+          type="file"
+          accept="audio/*"
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+            setFile(e.target.files?.[0] ?? null)
+          }
+        />
+        <button type="submit">Submit</button>
       </form>
-    </main>
+      {jobId && <p>Job created: {jobId}</p>}
+    </div>
   );
 }

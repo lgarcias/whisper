@@ -2,7 +2,10 @@ REPO_NAME := whisper-website
 GIT_REV := $(shell git rev-parse --short HEAD)
 OUTDIR := build
 
-.PHONY: all zip tar clean
+ZIP_NAME := $(OUTDIR)/$(REPO_NAME)-$(GIT_REV).zip
+ZIP_NAME_ALL := $(OUTDIR)/$(REPO_NAME)-$(GIT_REV)-all.zip
+
+.PHONY: all zip zip-all
 
 all: zip
 
@@ -11,13 +14,13 @@ $(OUTDIR):
 
 zip: $(OUTDIR)
 	@echo "Creating zip of tracked files (HEAD)"
-	git archive --format=zip -o $(OUTDIR)/$(REPO_NAME)-$(GIT_REV).zip HEAD
-	@echo "Created $(OUTDIR)/$(REPO_NAME)-$(GIT_REV).zip"
+	@git archive --format=zip -o "$(ZIP_NAME)" HEAD
+	@echo "Created $(ZIP_NAME)"
 
-tar: $(OUTDIR)
-	@echo "Creating tar.gz of tracked files (HEAD)"
-	git archive --format=tar HEAD | gzip > $(OUTDIR)/$(REPO_NAME)-$(GIT_REV).tar.gz
-	@echo "Created $(OUTDIR)/$(REPO_NAME)-$(GIT_REV).tar.gz"
-
-clean:
-	rm -rf $(OUTDIR)
+zip-all: $(OUTDIR)
+	@echo "Creating zip of tracked + untracked (respecting .gitignore)"
+	@rm -f "$(ZIP_NAME_ALL)"
+	@git ls-files -z --cached --others --exclude-standard \
+	| grep -zvE '^$(OUTDIR)(/|$$)' \
+	| xargs -0 -I{} zip -q -r "$(ZIP_NAME_ALL)" "{}"
+	@echo "Created $(ZIP_NAME_ALL)"
