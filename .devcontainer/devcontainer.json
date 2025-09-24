@@ -3,7 +3,7 @@
   "dockerComposeFile": ["docker-compose.yml"],
   "service": "app",
   "workspaceFolder": "/workspaces/whisper-website",
-  "runServices": ["app", "redis"],
+  "runServices": ["app", "redis", "api", "worker"],
   "shutdownAction": "stopCompose",
   "forwardPorts": [3000, 8000, 6379],
   "postCreateCommand": "bash .devcontainer/post-create.sh",

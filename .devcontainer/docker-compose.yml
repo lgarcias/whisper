@@ -1,4 +1,4 @@
-version: "3.9"
+name: whisper-website
 services:
   app:
     build:
@@ -10,7 +10,8 @@ services:
     command: sleep infinity
     ports:
       - "3000:3000"
-      - "8000:8000"
+      # ❌ Quitar el puerto 8000 aquí para evitar colisión con 'api'
+      # - "8000:8000"
     environment:
       - PIP_DISABLE_PIP_VERSION_CHECK=1
       - PYTHONDONTWRITEBYTECODE=1
@@ -19,9 +20,11 @@ services:
       - WHISPER_CACHE_DIR=/models/whisper
       - HF_HOME=/models/hf
       - XDG_CACHE_HOME=/models/cache
+
   redis:
     image: redis:7-alpine
     restart: unless-stopped
+
   worker:
     build:
       context: ..
@@ -32,8 +35,34 @@ services:
       - whisper-models:/models
     depends_on:
       - redis
+    environment:
+      # ⬅️ Necesario para que el worker hable con redis del compose
+      - REDIS_URL=redis://redis:6379/0
+      # comparte la misma caché de modelos
+      - HF_HOME=/models/hf
+      - XDG_CACHE_HOME=/models/cache
     command: bash -lc "source .venv/bin/activate && python -m backend.app.worker"
     restart: unless-stopped
 
+  api:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    working_dir: /workspaces/whisper-website
+    volumes:
+      - ..:/workspaces/whisper-website:cached
+      - whisper-models:/models
+    environment:
+      # Asegura que el backend y el worker compartan cachés en /models
+      - HF_HOME=/models/hf
+      - XDG_CACHE_HOME=/models/cache
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      - redis
+    command: bash -lc "source .venv/bin/activate && uvicorn backend.app.main:app --host 0.0.0.0 --port 8000 --reload"
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
 volumes:
-  whisper-models: {}   # ⬅️ define el volumen
+  whisper-models: {}
