@@ -1,4 +1,4 @@
-# Services Guide (FastAPI, Redis, RQ Worker)
+# Services Guide (FastAPI, Redis, RQ Worker, Frontend)
 
 This document explains what each service does and how to **start / stop / restart** them from the **host** and from the **DevContainer terminal in VS Code**.
 
@@ -11,16 +11,20 @@ This document explains what each service does and how to **start / stop / restar
 - **FastAPI (app)**
 
   - Python API served by `uvicorn`.
-  - Default ports exposed in compose: `8000:8000` (API), optionally `3000:3000` if your frontend uses it.
+  - Default port: `8000:8000` (API)
   - Health endpoint: `GET /health` → `{ "status": "ok" }`.
+
+- **Frontend (Next.js)**
+
+  - React/Next.js app served on `3000:3000`.
+  - See [frontend/README.md](../frontend/README.md) for details and commands.
 
 - **Redis (redis)**
 
   - In‑memory queue broker for RQ.
-  - Internal port: `6379` (usually not published to host).
+  - Internal port: `6379` (not published to host).
 
 - **RQ Worker (worker)**
-
   - Background worker that consumes jobs from the Redis queue `whisper`.
   - Runs `python -m backend.app.worker`.
 
@@ -194,12 +198,16 @@ Run with **Ctrl+Shift+P → Run Task**.
     curl -X POST "http://localhost:8000/transcriptions" -F "file=@/path/to/audio.wav"
     ```
 
+- **Frontend**
+
+  - Open [http://localhost:3000](http://localhost:3000) in your browser.
+  - See [frontend/README.md](../frontend/README.md) for more info.
+
 - **Redis**
 
   - Inside DevContainer: `redis-cli -h redis ping` → `PONG`
 
 - **RQ Worker**
-
   - Logs: `docker compose -f .devcontainer/docker-compose.yml logs -f worker`
   - Should show: `Listening on whisper...`, `Started job ...`, `Finished ...`.
 
@@ -209,5 +217,12 @@ Run with **Ctrl+Shift+P → Run Task**.
 
 - **Port 3000/8000 already in use**: free the port on host or change port mapping in compose (`ports:` section).
 - **Worker stops when closing VS Code terminal**: run worker as a Compose service with `restart: unless-stopped`.
+
 - **Results location**: by default `TRANSCRIPTS_DIR` → `/workspaces/whisper-website/data`. If using a volume, set `TRANSCRIPTS_DIR=/data` and mount `whisper-data:/data` in `app` and `worker`.
 - **Redis connectivity**: inside Compose network, host is `redis` (not `localhost`).
+
+---
+
+For Makefile usage and packaging, see [main README](../README.md#-packaging).
+
+For running tests, see [Developer Setup](developer-setup.md#testing).

@@ -114,3 +114,7 @@ curl -s "http://localhost:8000/transcriptions/$JOB_ID/result"
   - `transcript.txt` (plain text)
   - `result.json` (with `engine`, `model`, `task`, `language`, `text`, `segments`).
 - **CORS** is open for development (all origins). Restrict before production.
+
+---
+
+For backend quick start, see [backend/README.md](../backend/README.md).

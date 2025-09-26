@@ -2,6 +2,8 @@
 
 This guide targets a small VPS (e.g., Hetzner CX or similar) to run the API privately.
 
+For local development, see [../README.md](../README.md) and [docs/developer-setup.md](developer-setup.md).
+
 ## 1) System packages
 
 ```bash
@@ -78,3 +80,17 @@ Create services for API and worker for automatic restarts. Ensure `WorkingDirect
 ## 7) Backups
 
 Back up `TRANSCRIPTS_DIR` (and any logs) on a schedule.
+
+---
+
+## Packaging & Testing
+
+To create zip archives, see the [Makefile usage in the main README](../README.md#-packaging).
+
+For running tests, see [Developer Setup](developer-setup.md#testing).
+
+---
+
+## Frontend
+
+This document covers backend setup. For frontend setup and deployment, see [frontend/README.md](../frontend/README.md).
