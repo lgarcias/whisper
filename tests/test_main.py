@@ -12,9 +12,13 @@ def test_health():
 
 
 def test_create_transcription(monkeypatch):
-    # Stub save_upload_to_tmp to avoid handling UploadFile internals
-    monkeypatch.setattr(main, "save_upload_to_tmp",
-                        lambda upload_file: "/tmp/fake.wav")
+    # Stub save_upload_to_tmp to create a real temp file
+    def fake_save_upload_to_tmp(upload_file):
+        path = "/tmp/fake.wav"
+        with open(path, "wb") as f:
+            f.write(b"RIFF....DATA")
+        return path
+    monkeypatch.setattr(main, "save_upload_to_tmp", fake_save_upload_to_tmp)
 
     class FakeJob:
         def __init__(self):
@@ -35,7 +39,7 @@ def test_create_transcription(monkeypatch):
         def save_meta(self):
             self.meta_saved = True
 
-    def fake_enqueue(func, kwargs=None, job_timeout=None, result_ttl=None, ttl=None):
+    def fake_enqueue(func, kwargs=None, job_timeout=None, result_ttl=None, ttl=None, **extra_kwargs):
         return FakeJob()
 
     # Replace the queue object with one exposing enqueue and connection
