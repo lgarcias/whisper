@@ -55,16 +55,35 @@ DB_LOG_LEVEL=INFO
 - To manually connect to the database (from the DevContainer):
   - Install `psql` or use a Python client.
 
----
+### Alembic (Schema Migrations)
 
-## Backups
+This project uses [Alembic](https://alembic.sqlalchemy.org/) for database schema migrations.
 
+- Alembic is configured in `alembic.ini` (root) and `backend/alembic/`.
+- The migration environment loads `DATABASE_URL` from the environment and uses the SQLAlchemy `Base` from `backend/app/db.py`.
+- All models must be imported in `backend/app/models.py` for autogeneration to work.
+
+#### Common Alembic commands
+
+```bash
+# Create a new migration (autogenerate based on models)
 - The database data is stored in the Docker volume `whisper-pgdata`.
 - To back up or restore, use `docker volume` commands or `pg_dump`/`pg_restore`.
 
 ---
 
 ## Security
+
+```
+
+#### Notes
+
+- You must set `DATABASE_URL` in your environment or `.env`/`.env.test` before running Alembic.
+- Alembic supports both offline and online migration modes.
+- Autogenerate is enabled with `compare_type=True` and `compare_server_default=True` for accurate diffs.
+- Migration scripts are stored in `backend/alembic/versions/`.
+
+See also: [backend/alembic/env.py](../backend/alembic/env.py)
 
 - Never expose your database to the public internet.
 - Use strong, unique passwords in production.

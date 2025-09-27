@@ -1,4 +1,5 @@
 -r requirements.txt
+alembic
 httpx   # útil para tests con FastAPI TestClient
 pytest
 pytest-asyncio
