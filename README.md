@@ -83,6 +83,7 @@ make clean    # Remove build/
 - Backend details: [backend/README.md](backend/README.md)
 - Frontend details: [frontend/README.md](frontend/README.md)
 - API reference: [docs/backend.md](docs/backend.md)
+- Database setup & config: [docs/database.md](docs/database.md)
 - Developer setup: [docs/developer-setup.md](docs/developer-setup.md)
 - App/production setup: [docs/app-setup.md](docs/app-setup.md)
 - Services and orchestration: [docs/services.md](docs/services.md)
