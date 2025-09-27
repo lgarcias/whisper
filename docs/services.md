@@ -1,4 +1,4 @@
-# Services Guide (FastAPI, Redis, RQ Worker, Frontend)
+# Services Guide (FastAPI, Redis, RQ Worker, Frontend, Postgres)
 
 This document explains what each service does and how to **start / stop / restart** them from the **host** and from the **DevContainer terminal in VS Code**.
 
@@ -7,6 +7,20 @@ This document explains what each service does and how to **start / stop / restar
 ---
 
 ## Services Overview
+
+- **Frontend (Next.js)**
+
+  - React/Next.js app served on `3000:3000`.
+  - See [frontend/README.md](../frontend/README.md) for details and commands.
+
+- **Postgres (postgres)**
+
+  - PostgreSQL database for persistent storage.
+  - Default port: `5432:5432` (exposed to host)
+  - Credentials and database name are set via environment variables:
+    - `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` (see `.env` file for development)
+  - Data is persisted in the Docker volume `whisper-pgdata`.
+  - For connection details and usage, see backend documentation or your ORM/driver config.
 
 - **FastAPI (app)**
 

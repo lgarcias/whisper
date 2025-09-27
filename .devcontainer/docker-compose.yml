@@ -6,7 +6,7 @@ services:
       dockerfile: .devcontainer/Dockerfile
     volumes:
       - ..:/workspaces/whisper-website:cached
-      - whisper-models:/models            # ⬅️ volumen persistente para cachés de modelos
+      - whisper-models:/models # ⬅️ volumen persistente para cachés de modelos
     command: sleep infinity
     ports:
       - "3000:3000"
@@ -64,5 +64,18 @@ services:
       - "8000:8000"
     restart: unless-stopped
 
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-whisper}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-whisper}
+      POSTGRES_DB: ${POSTGRES_DB:-whisperdb}
+    ports:
+      - "5432:5432"
+    volumes:
+      - whisper-pgdata:/var/lib/postgresql/data
+
 volumes:
   whisper-models: {}
+  whisper-pgdata: {}
