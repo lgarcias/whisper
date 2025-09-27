@@ -22,12 +22,12 @@ def test_session_local():
         session.close()
 
 
-def test_getDb_dependency():
+# def test_get_db_dependency():
 
 
 def test_get_db_dependency():
-    """Test that the getDb FastAPI dependency yields a session and closes it."""
-    gen = db.getDb()
+    """Test that the get_db FastAPI dependency yields a session and closes it."""
+    gen = db.get_db()
     session = next(gen)
     assert session.is_active
     try:
