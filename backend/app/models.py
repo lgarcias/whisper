@@ -8,7 +8,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import declarative_base
-from backend.app.db import Base
+from app.db import Base
 
 import uuid
 

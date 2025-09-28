@@ -1,93 +1,78 @@
 """
-db.py - SQLAlchemy setup for FastAPI with Postgres.
-- CamelCase for internal names (project convention).
-- PEP8-compliant line lengths and imports.
+db.py - SQLAlchemy setup for FastAPI with SQLAlchemy.
+- Safe to import without DATABASE_URL set (lazy engine init).
 """
-from typing import Generator
+from __future__ import annotations
+
+from typing import Generator, Optional
 import logging
 import os
 
-from sqlalchemy import create_engine, text
-from sqlalchemy.exc import DBAPIError, OperationalError
+from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, declarative_base, sessionmaker
 
 # -------------------------
 # Logging
 # -------------------------
-logger = logging.getLogger("db")
-logLevelName = os.getenv("DB_LOG_LEVEL", "INFO").upper()
-logger.setLevel(getattr(logging, logLevelName, logging.INFO))
-
-if not logger.hasHandlers():
-    handler = logging.StreamHandler()
-    formatter = logging.Formatter(
-        "[%(asctime)s] %(levelname)s in %(module)s: %(message)s"
-    )
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
+logger = logging.getLogger(__name__)
 
 # -------------------------
-# Env configuration
+# ORM Base
 # -------------------------
-databaseUrl = os.getenv("DATABASE_URL")
-if not databaseUrl:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is required for database connection."
-    )
-
-poolSize = int(os.getenv("DB_POOL_SIZE", "5"))
-maxOverflow = int(os.getenv("DB_MAX_OVERFLOW", "5"))
-poolRecycle = int(os.getenv("DB_POOL_RECYCLE", "1800"))  # seconds
-poolTimeout = int(os.getenv("DB_POOL_TIMEOUT", "30"))     # seconds
-echoSql = os.getenv("DB_ECHO", "false").lower() == "true"
-
-# -------------------------
-# Engine
-# -------------------------
-engine = create_engine(
-    databaseUrl,
-    pool_pre_ping=True,
-    pool_size=poolSize,
-    max_overflow=maxOverflow,
-    pool_recycle=poolRecycle,
-    pool_timeout=poolTimeout,
-    echo=echoSql,
-    future=True,
-)
-
-# Optional: fail fast if DB is not reachable at startup
-try:
-    with engine.connect() as conn:
-        conn.execute(text("SELECT 1"))
-    logger.info("Database connection test succeeded.")
-except (OperationalError, DBAPIError) as exc:
-    logger.error("Database connection test failed: %s", exc)
-    raise
-
-# -------------------------
-# Session / Base
-# -------------------------
-SessionLocal: sessionmaker[Session] = sessionmaker(
-    bind=engine,
-    autocommit=False,
-    autoflush=False,
-    future=True,
-)
-
 Base = declarative_base()
 
 # -------------------------
-# FastAPI dependency
+# Lazy Engine / Session maker
 # -------------------------
+_engine: Optional[Engine] = None
+_SessionLocal: Optional[sessionmaker] = None
+
+
+def getDatabaseUrl() -> str:
+    """
+    Returns DATABASE_URL or raises at call time (not import time).
+    """
+    url = os.getenv("DATABASE_URL")
+    if not url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is required for database connection."
+        )
+    return url
+
+
+def getEngine() -> Engine:
+    """
+    Lazily create and cache the SQLAlchemy engine.
+    """
+    global _engine
+    if _engine is None:
+        url = getDatabaseUrl()
+        _engine = create_engine(url, future=True)
+        logger.info("SQLAlchemy engine initialized")
+    return _engine
+
+
+def getSessionLocal() -> sessionmaker:
+    """
+    Lazily create and cache the sessionmaker bound to the engine.
+    """
+    global _SessionLocal
+    if _SessionLocal is None:
+        _SessionLocal = sessionmaker(
+            autocommit=False, autoflush=False, bind=getEngine(), future=True
+        )
+    return _SessionLocal
 
 
 def get_db() -> Generator[Session, None, None]:
     """
     FastAPI dependency that yields a SQLAlchemy Session and ensures it is closed.
+
     Usage in routes:
         def handler(db: Session = Depends(get_db)): ...
     """
-    db = SessionLocal()
+    db = getSessionLocal()()
     try:
         yield db
     finally:
