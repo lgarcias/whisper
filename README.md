@@ -87,6 +87,8 @@ make clean    # Remove build/
 - Developer setup: [docs/developer-setup.md](docs/developer-setup.md)
 - App/production setup: [docs/app-setup.md](docs/app-setup.md)
 - Services and orchestration: [docs/services.md](docs/services.md)
+- Roadmap: [docs/roadmap.md](./docs/roadmap.md)
+  - [Prompts esquema inicial](./docs/roadmap/prompts_esquema_inicial.md)
 
 ## ⚡ VS Code Tasks
 
