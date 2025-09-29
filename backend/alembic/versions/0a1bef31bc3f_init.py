@@ -1,8 +1,8 @@
 """init
 
-Revision ID: 52717920826c
+Revision ID: 0a1bef31bc3f
 Revises: None
-Create Date: 2025-09-28 16:49:36.423892
+Create Date: 2025-09-29 10:59:38.793741
 """
 
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql  # needed if autogen uses JSONB/UUID/ARRAY, etc.
 
 # revision identifiers, used by Alembic.
-revision = '52717920826c'
+revision = '0a1bef31bc3f'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -21,51 +21,51 @@ def upgrade() -> None:
     op.create_table('user',
     sa.Column('id', sa.String(), nullable=False),
     sa.Column('email', sa.String(), nullable=False),
-    sa.Column('passwordHash', sa.String(), nullable=False),
+    sa.Column('password_hash', sa.String(), nullable=False),
     sa.Column('role', sa.String(), nullable=False),
-    sa.Column('createdAt', sa.DateTime(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_user_email'), 'user', ['email'], unique=True)
     op.create_table('job',
     sa.Column('id', sa.String(), nullable=False),
-    sa.Column('ownerUserId', sa.String(), nullable=False),
+    sa.Column('owner_user_id', sa.String(), nullable=False),
     sa.Column('status', sa.String(), nullable=False),
-    sa.Column('modelName', sa.String(), nullable=False),
+    sa.Column('model_name', sa.String(), nullable=False),
     sa.Column('mode', sa.String(), nullable=False),
     sa.Column('language', sa.String(), nullable=True),
-    sa.Column('audioDurationMs', sa.Integer(), nullable=True),
-    sa.Column('processingTimeMs', sa.Integer(), nullable=True),
-    sa.Column('resultJsonPath', sa.String(), nullable=True),
-    sa.Column('transcriptTxtPath', sa.String(), nullable=True),
-    sa.Column('createdAt', sa.DateTime(), nullable=False),
-    sa.Column('updatedAt', sa.DateTime(), nullable=False),
-    sa.Column('errorMessage', sa.String(), nullable=True),
-    sa.ForeignKeyConstraint(['ownerUserId'], ['user.id'], ),
+    sa.Column('audio_duration_ms', sa.Integer(), nullable=True),
+    sa.Column('processing_time_ms', sa.Integer(), nullable=True),
+    sa.Column('result_json_path', sa.String(), nullable=True),
+    sa.Column('transcript_txt_path', sa.String(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.Column('updated_at', sa.DateTime(), nullable=False),
+    sa.Column('error_message', sa.String(), nullable=True),
+    sa.ForeignKeyConstraint(['owner_user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_table('license',
     sa.Column('key', sa.String(), nullable=False),
-    sa.Column('assignedToUserId', sa.String(), nullable=True),
+    sa.Column('assigned_to_user_id', sa.String(), nullable=True),
     sa.Column('plan', sa.String(), nullable=False),
     sa.Column('features', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('validFrom', sa.DateTime(), nullable=False),
-    sa.Column('validUntil', sa.DateTime(), nullable=False),
-    sa.Column('isRevoked', sa.Boolean(), nullable=False),
-    sa.Column('createdAt', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['assignedToUserId'], ['user.id'], ),
+    sa.Column('valid_from', sa.DateTime(), nullable=False),
+    sa.Column('valid_until', sa.DateTime(), nullable=False),
+    sa.Column('is_revoked', sa.Boolean(), nullable=False),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['assigned_to_user_id'], ['user.id'], ),
     sa.PrimaryKeyConstraint('key')
     )
     op.create_table('file_artifact',
     sa.Column('id', sa.String(), nullable=False),
-    sa.Column('jobId', sa.String(), nullable=False),
+    sa.Column('job_id', sa.String(), nullable=False),
     sa.Column('type', sa.String(), nullable=False),
     sa.Column('path', sa.String(), nullable=False),
-    sa.Column('sizeBytes', sa.Integer(), nullable=True),
-    sa.Column('createdAt', sa.DateTime(), nullable=False),
-    sa.ForeignKeyConstraint(['jobId'], ['job.id'], ),
+    sa.Column('size_bytes', sa.Integer(), nullable=True),
+    sa.Column('created_at', sa.DateTime(), nullable=False),
+    sa.ForeignKeyConstraint(['job_id'], ['job.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('jobId', 'type', name='uix_job_type')
+    sa.UniqueConstraint('job_id', 'type', name='uix_job_type')
     )
     # ### end Alembic commands ###
 
