@@ -99,21 +99,26 @@ Requirements:
 
 ---
 
-## Prompt 6 — Pydantic Schemas and Test Endpoints
+## Prompt 6 — Pydantic Schemas and Test Endpoints (PEP8)
 
 ```text
-You are GitHub Copilot. Implement Pydantic schemas in `backend/app/schemas.py` and a router in `backend/app/routers/jobs.py`.
+Implement Pydantic schemas in `backend/app/schemas.py` and a router in
+`backend/app/routers/jobs.py`.
 
-Schemas:
-- JobCreateIn, JobOut.
-
-Router:
-- Prefix `/api/transcriptions`.
-- POST / create job.
-- GET / list jobs by current user (status?, limit, offset).
-- GET /{id} job detail.
-- Use get_db().
-- Minimal error handling.
+Requirements (PEP8, snake_case, type hints, docstrings):
+- Schemas: `JobCreateIn`, `JobOut`.
+  - Include typical fields (e.g., model_name, language, status: Literal["queued","processing","done","failed"], created_at, etc.).
+- Router: prefix `/api/transcriptions`.
+  - `POST /` → create job, returns `201 Created`, `response_model=JobOut`, set `Location` header to `/{id}`.
+  - `GET /` → list jobs by current user, supports `status` (optional), `limit` (int=50), `offset` (int=0),
+    returns `list[JobOut]`.
+  - `GET /{id}` → job detail, returns `JobOut`.
+- Use FastAPI dependencies with `Depends(get_db)`; create handlers in snake_case.
+- Minimal error handling:
+  - Return `HTTPException(status_code=404)` if job not found.
+  - Map `ValueError` to `HTTPException(status_code=400)`.
+- Imports to prefer: `from fastapi import APIRouter, Depends, HTTPException, status`.
+- Keep functions small, with clear docstrings and type annotations.
 ```
 
 ---
@@ -121,11 +126,28 @@ Router:
 ## Prompt 7 — Health checks (API, Redis, DB)
 
 ```text
-You are GitHub Copilot. Create a health router `backend/app/routers/health.py`.
+Create a health router at `backend/app/routers/health.py`.
 
-Endpoints:
-- GET /api/health → checks DB (SELECT 1), Redis PING optional.
-- Return JSON: {"dbOk": bool, "redisOk": bool, "version": <git sha or env>, "time": <epoch>}.
+Requirements:
+- Use FastAPI (PEP8, snake_case, type hints, docstrings).
+- Endpoints:
+  1) GET `/api/health` (liveness): returns service up without touching DB/Redis.
+  2) GET `/api/ready` (readiness): checks DB (SELECT 1) and optional Redis PING with timeouts.
+- Use dependencies: `Depends(get_db)` for DB; accept an optional `redis_client` provider (can be None).
+- Return a typed schema `HealthOut` with fields:
+  - `db_ok: bool`
+  - `redis_ok: bool | None` (None if Redis not configured)
+  - `version: str` (read from `GIT_SHA` or `APP_VERSION` env, default `"dev"`)
+  - `time: int` (epoch seconds)
+- Behavior:
+  - If DB check fails, respond `503 Service Unavailable`.
+  - If Redis is configured and ping fails, respond `503`, else keep it `200`.
+  - Liveness (`/api/health`) always responds `200` with `db_ok=None`, `redis_ok=None`.
+- Implementation notes:
+  - Use `from sqlalchemy import text` and `session.execute(text("SELECT 1"))`.
+  - For Redis, wrap ping in `try/except` with a short timeout (e.g., 0.2s).
+  - Prefer `from fastapi import APIRouter, Depends, HTTPException, status`.
+  - Keep functions small, add docstrings, and type annotations.
 ```
 
 ---
@@ -133,12 +155,54 @@ Endpoints:
 ## Prompt 8 — Seed Demo Script
 
 ```text
-You are GitHub Copilot. Write `backend/scripts/seed_demo.py`.
-- Inserts demo admin and user.
-- Adds 3 jobs for the user with statuses.
-- Adds FileArtifact rows.
-- Uses get_db().
-- Print summary.
+Create `backend/scripts/seed_demo.py`.
+
+Goals:
+- Insert a demo admin and a demo user (idempotent: don't duplicate if rerun).
+- Create 3 jobs for the demo user with different statuses and attach FileArtifact rows.
+- Use `get_db()` from `backend/app/db.py` to obtain a SQLAlchemy session.
+- Print a concise summary at the end.
+
+Constraints & conventions (match project style):
+- PEP8 (snake_case), type hints, module-level logger, clear docstrings.
+- Use UTC timestamps: `datetime.now(timezone.utc)`.
+- Assume models are in `backend/app/models.py` with snake_case attributes:
+  - User(email, password_hash, role, created_at)
+  - Job(owner_user_id, status, model_name, language, created_at, updated_at,
+        audio_duration_ms, processing_time_ms, result_json_path, transcript_txt_path, error_message)
+  - FileArtifact(job_id, type, path, size_bytes, created_at)
+- Valid job statuses: "queued", "processing", "done", "failed".
+- Make the script safe to import and runnable: `if __name__ == "__main__": main()`.
+
+Behavior:
+- Idempotency:
+  - Upsert users by `email` ("admin@example.com", "user@example.com").
+  - Only create demo jobs if none exist for the demo user (or behind a `--force` flag).
+- CLI:
+  - `--force`  → recreate demo jobs (delete existing demo jobs/artifacts for the demo user first).
+  - `--reset`  → delete ALL data from jobs and file_artifacts (and demo users' jobs), then reseed.
+- Transactions:
+  - Use a single session context; commit on success, rollback on exception.
+  - Catch `IntegrityError` and re-raise with a helpful message.
+- Demo data:
+  - Jobs: create 3 jobs with statuses: queued, processing, done.
+  - For the "done" job, add two FileArtifact rows: `{"type": "result_json", "path": "/data/demo/result.json"}`,
+    `{"type": "transcript_txt", "path": "/data/demo/transcript.txt"}` with small dummy `size_bytes`.
+- Output:
+  - Print a one-line summary: counts of users, jobs, artifacts created/left.
+  - Log debug lines with created IDs.
+
+Imports to prefer:
+- `from backend.app.db import get_db`
+- `from backend.app import models`
+- `from sqlalchemy.exc import IntegrityError`
+- `from sqlalchemy import delete, select`
+- stdlib: `argparse`, `logging`, `datetime`, `uuid`
+
+Quality:
+- Small functions: `get_or_create_user(...)`, `ensure_demo_jobs(...)`, `wipe_demo_jobs(...)`.
+- Type annotations everywhere. Keep functions pure where possible.
+- Avoid hard exits inside helpers; raise exceptions and handle in `main()`.
 ```
 
 ---
