@@ -1,6 +1,9 @@
 -r requirements.txt
 alembic
+black==24.8.0
 httpx   # útil para tests con FastAPI TestClient
+pre-commit==3.8.0
 pytest
 pytest-asyncio
 pytest-dotenv
+ruff==0.6.9
