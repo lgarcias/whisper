@@ -1,7 +1,8 @@
 # backend/app/worker.py
 from rq import Worker
-from .rq_queue import redis, queue  # shared Redis connection and queue
+
 from . import transcribe  # noqa: F401 (ensure task module is imported)
+from .rq_queue import queue, redis  # shared Redis connection and queue
 
 
 def run() -> None:

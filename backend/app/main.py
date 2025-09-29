@@ -1,15 +1,16 @@
 # backend/app/main.py
 import os
-import uuid
 import shutil
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException
+import uuid
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from rq.job import Job
 
+from . import transcribe as t
 from .config import settings
 from .rq_queue import queue
-from .storage import save_upload_to_tmp, new_job_dir
-from . import transcribe as t
+from .storage import new_job_dir, save_upload_to_tmp
 
 app = FastAPI(title="Whisper Website API")
 
@@ -30,10 +31,10 @@ def health():
 @app.post("/transcriptions")
 async def create_transcription(
     file: UploadFile = File(...),
-    engine: str = Form(settings.DEFAULT_ENGINE),     # "faster" | "openai"
+    engine: str = Form(settings.DEFAULT_ENGINE),  # "faster" | "openai"
     # tiny|base|small|medium|large
     model: str = Form(settings.DEFAULT_MODEL),
-    device: str = Form(settings.DEFAULT_DEVICE),     # "auto" | "cpu" | "cuda"
+    device: str = Form(settings.DEFAULT_DEVICE),  # "auto" | "cpu" | "cuda"
     # "transcribe" | "translate"
     task: str = Form("transcribe"),
     language: str | None = Form(None),
@@ -56,8 +57,7 @@ async def create_transcription(
     uploads_dir = os.path.join(outdir, "uploads")
     os.makedirs(uploads_dir, exist_ok=True)
 
-    dst_path = os.path.join(
-        uploads_dir, os.path.basename(local_tmp or "upload.wav"))
+    dst_path = os.path.join(uploads_dir, os.path.basename(local_tmp or "upload.wav"))
     try:
         shutil.move(local_tmp, dst_path)
     except Exception:

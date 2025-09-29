@@ -1,9 +1,35 @@
+
+
 [tool.black]
 line-length = 100
-target-version = "py311"
+target-version = ["py311"]
+exclude = '''
+/backend/alembic/versions/
+/build/
+/data/
+/docs/
+/frontend/
+'''
+
+
 
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-select = ["I"]  # ordena imports
-fix = true
+exclude = [
+	".venv",
+	"env",
+	"venv",
+	"build",
+	"dist",
+	"__pycache__",
+	"data",
+	"node_modules",
+	".git",
+	"backend/alembic/versions",
+	"docs",
+	"frontend"
+]
+
+[tool.ruff.lint]
+extend-select = ["I"]  # sort imports
