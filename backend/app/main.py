@@ -9,6 +9,9 @@ from rq.job import Job
 
 from . import transcribe as t
 from .config import settings
+
+# Import routers as needed
+from .routers import health_router
 from .rq_queue import queue
 from .storage import new_job_dir, save_upload_to_tmp
 
@@ -22,10 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-@app.get("/health")
-def health():
-    return {"status": "ok"}
+app.include_router(health_router)
 
 
 @app.post("/transcriptions")
