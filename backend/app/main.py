@@ -136,13 +136,15 @@ def get_transcription_result(job_id: str):
     if not (json_path and os.path.exists(json_path)):
         raise HTTPException(500, "result file missing")
 
-    # Return JSON content as a string; client may parse it
+    # Parse JSON content and return as an object
+    import json
+
     with open(json_path, "r", encoding="utf-8") as f:
-        content = f.read()
+        result_obj = json.load(f)
 
     return {
         "job_id": job.id,
-        "json": content,
+        "result": result_obj,
         "text_path": txt_path,
         "outdir": result.get("outdir"),
     }

@@ -20,12 +20,12 @@ export async function getTranscriptionStatus(id: string) {
 export async function getTranscriptionResult(id: string) {
   const r = await fetch(`/api/transcriptions/${id}/result`, { cache: "no-store" });
   if (!r.ok) throw new Error(await r.text());
-  // Tu backend devuelve `json` como string → parseamos
-  const data = await r.json() as { json?: string; text_path?: string };
-  const parsed = data.json ? JSON.parse(data.json) : null;
+  // Ahora el backend devuelve 'result' ya parseado
+  type TranscriptionResult = { text: string; [key: string]: unknown };
+  const data = await r.json() as { result?: TranscriptionResult; text_path?: string };
   return {
-    text: parsed?.text ?? "",
-    raw: parsed,
+    text: data.result?.text ?? "",
+    raw: data.result,
     text_path: data.text_path,
   };
 }
