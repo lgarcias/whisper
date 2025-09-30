@@ -5,10 +5,9 @@ models.py - SQLAlchemy ORM models for the transcription service.
 import uuid
 from datetime import datetime, timezone
 
+from app.db import Base
 from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
-
-from app.db import Base
 
 
 class User(Base):
