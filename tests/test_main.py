@@ -1,17 +1,13 @@
-import io
 from fastapi.testclient import TestClient
-from backend.app import main
-
-client = TestClient(main.app)
 
 
-def test_health():
-    r = client.get("/health")
+def test_health(client_override: TestClient):
+    r = client_override.get("/health")
     assert r.status_code == 200
     assert r.json() == {"status": "ok"}
 
 
-def test_create_transcription(monkeypatch):
+def test_create_transcription(monkeypatch, client_override: TestClient):
     # Stub save_upload_to_tmp to create a real temp file
     def fake_save_upload_to_tmp(upload_file):
         path = "/tmp/fake.wav"
@@ -50,24 +46,24 @@ def test_create_transcription(monkeypatch):
     data = {"engine": "faster", "model": "base", "device": "cpu",
             "task": "transcribe", "compute_type": "int8"}
 
-    r = client.post("/transcriptions", files=files, data=data)
+    r = client_override.post("/transcriptions", files=files, data=data)
     assert r.status_code == 200
     body = r.json()
     assert body["job_id"] == "job123"
     assert body["status"] == "queued"
 
 
-def test_get_transcription_not_found(monkeypatch):
+def test_get_transcription_not_found(monkeypatch, client_override: TestClient):
     # Make Job.fetch raise to simulate missing job
     def raise_fetch(job_id, connection=None):
         raise Exception("not found")
 
     monkeypatch.setattr(main.Job, "fetch", staticmethod(raise_fetch))
-    r = client.get("/transcriptions/does-not-exist")
+    r = client_override.get("/transcriptions/does-not-exist")
     assert r.status_code == 404
 
 
-def test_get_transcription_result_not_ready(monkeypatch):
+def test_get_transcription_result_not_ready(monkeypatch, client_override: TestClient):
     class FakeJob:
         def __init__(self):
             self.id = "job123"
@@ -81,5 +77,5 @@ def test_get_transcription_result_not_ready(monkeypatch):
 
     monkeypatch.setattr(main.Job, "fetch", staticmethod(
         lambda job_id, connection=None: FakeJob()))
-    r = client.get("/transcriptions/job123/result")
+    r = client_override.get("/transcriptions/job123/result")
     assert r.status_code == 202
