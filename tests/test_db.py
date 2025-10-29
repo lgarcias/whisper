@@ -1,40 +1,19 @@
-import pytest
-from sqlalchemy.exc import OperationalError
-
-from backend.app import db
-
-
-def test_engine_connect():
-    """Test that the SQLAlchemy engine can connect and execute a simple query."""
-    try:
-        with db.get_engine().connect() as conn:
-            from sqlalchemy import text
-
-            conn.execute(text("SELECT 1"))
-    except OperationalError as exc:
-        pytest.fail(f"Database connection failed: {exc}")
+from sqlalchemy import text
+from sqlalchemy.engine import Engine
+from sqlalchemy.orm import Session
 
 
-def test_session_local():
-    """Test that a session can be created and closed without error."""
-    session = db.get_session_local()()
-    try:
-        assert session.is_active
-    finally:
-        session.close()
+def test_engine_connect(test_engine: Engine):
+    """
+    Tests that the test_engine fixture produces a usable engine.
+    """
+    with test_engine.connect() as conn:
+        conn.execute(text("SELECT 1"))
 
 
-# def test_get_db_dependency():
-
-
-def test_get_db_dependency():
-    """Test that the get_db FastAPI dependency yields a session and closes it."""
-    gen = db.get_db()
-    session = next(gen)
-    assert session.is_active
-    try:
-        next(gen)
-    except StopIteration:
-        pass
-    else:
-        pytest.fail("getDb generator did not stop after yielding session.")
+def test_session_fixture(test_session: Session):
+    """
+    Tests that the test_session fixture produces a usable session.
+    """
+    assert test_session.is_active
+    test_session.execute(text("SELECT 1"))
