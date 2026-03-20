@@ -1,101 +1,67 @@
-# Whisper Website
+# Whisper Transcription Tool
 
-Whisper Website provides a **FastAPI** backend and a **Next.js** frontend to transcribe audio using **OpenAI Whisper** and **Faster-Whisper** models.
+## Overview
+This project is a transcription platform built using OpenAI Whisper, designed to process audio files and generate accurate text transcriptions through an asynchronous and scalable architecture.
 
-The goal is to offer a simple API to upload audio files and get transcriptions, with background job queue processing via **RQ + Redis**. The project is containerized for easy local development and includes a Makefile for packaging.
+It combines a FastAPI backend, background processing with Redis and RQ, and a containerized environment for easy deployment and development.
 
----
+## Features
+- Audio-to-text transcription using Whisper
+- Asynchronous processing with job queue (Redis + RQ)
+- REST API for managing transcription jobs
+- Support for multiple models, devices, and formats
+- Scalable and containerized architecture (Docker)
+- Ready for production deployment (VPS setup)
 
-## 🚀 Local Development
+## Tech Stack
+- Python
+- FastAPI
+- OpenAI Whisper / Faster-Whisper
+- Redis + RQ (background jobs)
+- PostgreSQL
+- Docker & Docker Compose
 
-### Prerequisites
+## How it works
+1. Upload an audio file via the API  
+2. A background job is created and processed asynchronously  
+3. The transcription result is stored and can be retrieved via API  
 
-- Docker and Docker Compose
-- VS Code with the **Dev Containers** extension
-- Git
+## Quick start (development)
 
-### Initial Setup
+Start services:
+    docker compose up -d
 
-Clone this repository and open it in VS Code:
+Run API manually (optional):
+    uvicorn backend.app.main:app --reload
 
-```bash
-git clone <repo-url>
-cd whisper-website
-```
+API available at:  
+http://localhost:8000
 
-Open in VS Code and select `Reopen in Container` to load the development environment. The Dev Container will set up a Python virtual environment and install dependencies automatically.
+## Example
 
-### Main Services
+    curl -F "file=@sample.wav" http://localhost:8000/transcriptions
 
-- **Backend**: FastAPI running at `http://localhost:8000` ([backend/README.md](backend/README.md))
-- **Frontend**: React/Next.js running at `http://localhost:3000` ([frontend/README.md](frontend/README.md))
-- **Redis**: used for the job queue
+## Purpose of the project
+This project was built as a personal initiative to explore AI-driven transcription, asynchronous processing, and scalable backend architectures.
 
----
+As a Technical Project Manager with a software engineering background, I actively develop projects like this to stay hands-on with modern technologies and better understand the systems I lead.
 
-## 📌 API Endpoints
+## Documentation
 
-> Default Base URL: `http://localhost:8000`
+Detailed documentation is available in the `/docs` folder:
 
-- `GET /health` → Check service status
-- `POST /transcriptions` → Upload an audio file for transcription (returns `job_id`)
-- `GET /transcriptions/{job_id}` → Check job status
-- `GET /transcriptions/{job_id}/result` → Get transcription result
+- Application setup (production): `docs/app-setup.md`
+- Developer setup: `docs/developer-setup.md`
+- Backend API: `docs/backend.md`
+- Services and infrastructure: `docs/services.md`
+- Database: `docs/database.md`
+- Roadmap: `docs/roadmap.md`
 
-> See detailed API documentation in [`docs/backend.md`](docs/backend.md)
-
----
-
-## 🛠️ Technologies
-
-- [FastAPI](https://fastapi.tiangolo.com/)
-- [RQ](https://python-rq.org/) + Redis
-- [Whisper](https://github.com/openai/whisper) and [Faster-Whisper](https://github.com/guillaumekln/faster-whisper)
-- [Next.js](https://nextjs.org/) (frontend)
-- Docker / DevContainers
-
----
-
-## 🧪 Testing
-
-Tests are written with `pytest` and located in the `tests/` directory. You can run all tests from the project root:
-
-```bash
-pytest
-```
-
-or using the VS Code Test Explorer (recommended in Dev Container).
-
-> The project includes a `pytest.ini` so you do not need to set `PYTHONPATH` manually.
-
-## 🗂️ Packaging
-
-You can create zip archives of the project using the provided Makefile:
-
-```bash
-make zip      # Only tracked files (HEAD)
-make zip-all  # Tracked + untracked files (respects .gitignore)
-make clean    # Remove build/
-```
-
-## 📚 Documentation
-
-- Backend details: [backend/README.md](backend/README.md)
-- Frontend details: [frontend/README.md](frontend/README.md)
-- API reference: [docs/backend.md](docs/backend.md)
-- Database setup & config: [docs/database.md](docs/database.md)
-- Developer setup: [docs/developer-setup.md](docs/developer-setup.md)
-- App/production setup: [docs/app-setup.md](docs/app-setup.md)
-- Services and orchestration: [docs/services.md](docs/services.md)
-- Roadmap: [docs/roadmap.md](./docs/roadmap.md)
-  - [Prompts esquema inicial](./docs/roadmap/prompts_esquema_inicial.md)
-
-## ⚡ VS Code Tasks
-
-The project includes VS Code tasks for starting/stopping the backend and worker. Use `Ctrl+Shift+P → Run Task` for convenience.
+## Future improvements
+- Batch processing for multiple audio files
+- Language detection and translation
+- Export formats (SRT, VTT)
+- Web UI enhancements
+- Authentication and user management
 
 ---
-
-## 📄 License
-
-MIT
